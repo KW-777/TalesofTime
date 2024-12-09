@@ -7,7 +7,6 @@ class FightGame:
     current_opponent = None
     globalself = None
     def __init__(self):
-        print(self)
         FightGame.globalself = self
         print("Welcome to Fight Game v%.1f!" % FightGame.VERSION)
         self.charwiz()    
@@ -193,10 +192,7 @@ class FightGame:
         print("\nYou have defeated your opponent! [+75 Health, +5 Max Damage, +5 Max Speed, +%d coins]" % randcoins)
         y = input("\nWould you like to fight another opponent? (y/n): ")
         if y == "y":
-            if self.character.kc == 5:
-                self.opponent = Boss_Archer()
-            else:
-                self.newOpponent()
+            self.newOpponent()
         else:
             self.mainmenu()
     def fightLoss(self): #Failure
@@ -211,36 +207,40 @@ class FightGame:
         else:
             print("\nThank you for playing!")
             self.character = None
+            return
 ##Consumables##
     def inv(self): #Inventory
-        for index in range(len(self.character.items)):
-            if index == 0:
-                itemname = "(M) Medpacks"
-                bio = "Restores 150 Health"
-            if index == 1:
-                itemname = "(G) Go-Juice"
-                bio = "Boosts Speed, Accuracy & Crit chance"
-            if index == 2:
-                itemname = "(A) Adr Boosters"
-                bio = "Boosts Damage, Crits & Defense Moderately "
-            print("\n%dx %s\n=>%s" % (self.character.items[index],itemname,bio))
-        y = input("\nWould you like to use an item?(y/n)")
-        if y == "y":
-            x = input("What item would you like to use (M,G,A):").upper()
-            if x == "M":
-                self.apply_hp()
-                self.inv()
-            if x == "G":
-                self.apply_gj()
-                self.inv()
-            if x == "A":
-                self.apply_adr()
-                self.inv()
-        else:
-            if self.prevmenu == "fm":
-                self.fightmenu()
+        try:
+            for index in range(len(self.character.items)):
+                if index == 0:
+                    itemname = "(M) Medpacks"
+                    bio = "Restores 150 Health"
+                if index == 1:
+                    itemname = "(G) Go-Juice"
+                    bio = "Boosts Speed, Accuracy & Crit chance"
+                if index == 2:
+                    itemname = "(A) Adr Boosters"
+                    bio = "Boosts Damage, Crits & Defense Moderately "
+                print("\n%dx %s\n=>%s" % (self.character.items[index],itemname,bio))
+            y = input("\nWould you like to use an item?(y/n)")
+            if y == "y":
+                x = input("What item would you like to use (M,G,A):").upper()
+                if x == "M":
+                    self.apply_hp()
+                    self.inv()
+                if x == "G":
+                    self.apply_gj()
+                    self.inv()
+                if x == "A":
+                    self.apply_adr()
+                    self.inv()
             else:
-                self.mainmenu()
+                if self.prevmenu == "fm":
+                    self.fightmenu()
+                else:
+                    self.mainmenu()
+        except Exception as e:
+            print(f"An unexpected error occurred while getting menu: {e}")
     def apply_hp(self): #Apply Medpack
         if self.character.items[0] == 0:
             print("(!)\nYou don't have enough Medpacks!\n(!)")
@@ -310,50 +310,53 @@ class FightGame:
             self.character.adr = False                
 ##Menus##
     def mainmenu(self): #Main Menu
-        self.prevmenu = "mm"
-        print("Tales of Time Main Menu")
-        print('Enter "help" for available commands')
-        opt = input("What would you like to do?").lower()
-        if opt == "help" or opt == "h":
-            print("Usage - Keyword\nView Current Character - info\nCreate New Character - newchar" \
-                  "\nChange Difficulty - dif\nNew Encounter - fight \nInventory - inv\nShop - n/a")
-            self.mainmenu()
-        elif opt == "stats" or opt == "s":
-            self.info()
-            self.mainmenu()
-        elif opt == "newchar":
-            y = input("This will clear existing character stats. Are you sure you would like to continue?(y/n): ")
-            if y == "y":
-                self.charwiz()
-            else:
-                print("Request Cancelled.")
+        try:
+            self.prevmenu = "mm"
+            print("Tales of Time Main Menu")
+            print('Enter "help" for available commands')
+            opt = input("What would you like to do?").lower()
+            if opt == "help" or opt == "h":
+                print("Usage - Keyword\nView Current Character - info\nCreate New Character - newchar" \
+                      "\nChange Difficulty - dif\nNew Encounter - fight \nInventory - inv\nShop - n/a")
                 self.mainmenu()
-        elif opt == "save":
-            self.save()
-            self.mainmenu()
-        elif opt == "load":
-            self.load()
-            self.mainmenu()
-        elif opt == "dif":
-            self.opponent = None
-            self.modify_difficulty()
-            self.mainmenu()
-        elif opt == "fight" or opt == "f":
-            self.newOpponent()
-        elif opt == "inv" or opt == "i":
-            self.inv()
-            self.mainmenu()
-        elif opt == "boss":
-            self.summon_boss()
-            FightGame.current_opponent = self.opponent
-            self.fightmenu()
-        elif opt == "exit":
-            return
-        else:
-            print("Invalid Option")
-            print("Usage - Keyword\nView Current Character - info\nCreate New Character - newchar" \
-                  "\nChange Difficulty - dif\nNew Encounter - fight \nInventory - inv\nShop - n/a")
-            self.mainmenu()
+            elif opt == "stats" or opt == "s":
+                self.info()
+                self.mainmenu()
+            elif opt == "newchar":
+                y = input("This will clear existing character stats. Are you sure you would like to continue?(y/n): ")
+                if y == "y":
+                    self.charwiz()
+                else:
+                    print("Request Cancelled.")
+                    self.mainmenu()
+            elif opt == "save":
+                self.save()
+                self.mainmenu()
+            elif opt == "load":
+                self.load()
+                self.mainmenu()
+            elif opt == "dif":
+                self.opponent = None
+                self.modify_difficulty()
+                self.mainmenu()
+            elif opt == "fight" or opt == "f":
+                self.newOpponent()
+            elif opt == "inv" or opt == "i":
+                self.inv()
+                self.mainmenu()
+            elif opt == "boss":
+                self.summon_boss()
+                FightGame.current_opponent = self.opponent
+                self.fightmenu()
+            elif opt == "exit":
+                return
+            else:
+                print("Invalid Option")
+                print("Usage - Keyword\nView Current Character - info\nCreate New Character - newchar" \
+                      "\nChange Difficulty - dif\nNew Encounter - fight \nInventory - inv\nShop - n/a")
+                self.mainmenu()
+        except Exception as e:
+            print(f"An unexpected error occurred while setting difficulty: {e}")
     def fightmenu(self): #Fight Menu
         self.prevmenu = "fm"
         opt = input("What would you like to do next? (type help for commands):")
@@ -415,20 +418,24 @@ class FightGame:
             mult = 1
         self.character.mult = mult
     def set_dif(self): #Sets opponent stats according to difficulty
-        self.opponent.health *= self.character.mult
-        self.opponent.defense *= self.character.mult
-        self.opponent.speed *= self.character.mult
-        self.opponent.damage *= self.character.mult
+        try:
+            self.opponent.health *= self.character.mult
+            self.opponent.defense *= self.character.mult
+            self.opponent.speed *= self.character.mult
+            self.opponent.damage *= self.character.mult
+        except Exception as e:
+            print(f"An unexpected error occurred while setting difficulty: {e}")
+
     def get_boss(self):
         if self.character.char == "Archer":
             if self.character.kc == 5:
-                self.summon_boss(1)
+                return Boss_Archer()
         elif self.character.char == "Warrior":
             if self.character.kc == 5:
-                self.summon_boss(2)
+                return Boss_Warrior()
         elif self.character.char == "Mage":
             if self.character.kc == 5:
-                self.summon_boss(3)
+                return Boss_Mage()
         else:
             rand = randint(1,3)
             print(rand)
@@ -480,45 +487,52 @@ class FightGame:
         try:
             loadnum = input("What load file would you like to access: ")
             self.fileload = ("character%s.txt" % loadnum)
-        except ValueError:
-            print("Invalid save file.")
-        filein = open(self.fileload, "r")
-        header = filein.readline().strip()
-        if header.startswith("New Character"):
-            num = header.split(":")[0].split()[-1]
-        else:
+            filein = open(self.fileload, "r")
+            header = filein.readline().strip()
+            if header.startswith("New Character"):
+                num = header.split(":")[0].split()[-1]
+            else:
+                print("Invalid save file.")
+                return
+            for line in filein:
+                if ":" not in line:
+                    continue
+                key, value = line.strip().split(":", 1)
+                try:
+                    parsed_value = literal_eval(value.strip())
+                    print("set",key,"to",parsed_value)
+                except (ValueError, SyntaxError):
+                    parsed_value = value.strip()
+                    print("**set",key,"to",parsed_value)
+                setattr(FightGame.current_character, key, parsed_value)
+            print("**Warning: attribute passed as string. May cause issues if attribute is a literal.**")
+            print("Loaded character",num)
+        except (ValueError, FileNotFoundError):
             print("Invalid save file.")
             return
-        for line in filein:
-            if ":" not in line:
-                continue
-            key, value = line.strip().split(":", 1)
-            try:
-                parsed_value = literal_eval(value.strip())
-                print("set",key,"to",parsed_value)
-            except (ValueError, SyntaxError):
-                parsed_value = value.strip()
-                print("**set",key,"to",parsed_value)
-            setattr(FightGame.current_character, key, parsed_value)
-        print("**Warning: attribute passed as string. May cause issues if attribute is a literal.**")
-        print("Loaded character",num)
 ##DEBUG##
     def get_opp_stats(self):
-        print("The tale of %s" % self.opponent.name, 
-              "\n\nStats: \nHealth: %.1f\nDefense: %.1f\nSpeed: %.1f\nDamage: %.1f" % (
-                  self.opponent.health, self.opponent.defense, self.opponent.speed,
-                  self.opponent.damage))
+        try:
+            print("The tale of %s" % self.opponent.name, 
+                  "\n\nStats: \nHealth: %.1f\nDefense: %.1f\nSpeed: %.1f\nDamage: %.1f" % (
+                      self.opponent.health, self.opponent.defense, self.opponent.speed,
+                      self.opponent.damage))
+        except Exception as e:        
+            print(f"An unexpected error occurred while summoning boss: {e}")
     def summon_boss(self,n=0):
-        if n == 0:
-            n = input("What Boss would you like to fight:")
-        elif n == "1":
-            self.opponent = Boss_Archer()
-        elif n == "2":
-            self.opponent = Boss_Warrior()
-        elif n == "3":
-            self.opponent = Boss_Mage()
-        else:
-            n = input("Invalid Option, try again.")
+        try:
+            if n == 0:
+                n = input("What Boss would you like to fight:")
+            elif n == "1":
+                self.opponent = Boss_Archer()
+            elif n == "2":
+                self.opponent = Boss_Warrior()
+            elif n == "3":
+                self.opponent = Boss_Mage()
+            else:
+                n = input("Invalid Option, try again.")
+        except Exception as e:
+            print(f"An unexpected error occurred while summoning boss: {e}")
 ######################Classes#############################
 class Character: #Name,Type,HP,Def,Spd,Dmg
     def __init__(self, name="Nomad", chartype="Adventurer", health=100, defense=40, speed=40, damage=40, ranatk=10):
@@ -561,7 +575,7 @@ class Character: #Name,Type,HP,Def,Spd,Dmg
 class Warrior(Character): #Warrior Class => High Health, Low Defense, Moderately Slow, Medium Damage
     def __init__(self, name="Warrior"):
         super().__init__(name, "Warrior", 120, 30, 50, 50,99)
-        self.atkmsg = ["\n%s sliced %s dealing %.1f dmg", "\n%s stabbed %s dealing %.1f dmg", "\n%s landed a critical hit on %s dealing %.1f dmg"]
+        self.atkmsg = ["\n%s sliced %s dealing %.1f dmg", "\n%s stabbed %s dealing %.1f dmg"]
         self.critpercent = 1.40
 class Archer(Character): #Archer Class => Medium Health, Medium Defense, Moderately Fast, Very Low defense 
     def __init__(self, name="Archer"):
@@ -707,8 +721,11 @@ class Dev(Character):
         super().__init__(name, "Dev", 999,99,999,999,2)
         self.atkmsg = ["%s rewrote %s's code. Dealing %.1f dmg"]
         self.coinrate = randint(50,500)
-            
-game = FightGame()
+try:            
+    game = FightGame()
+except Exception as e:
+    print(f"An unexpected error occurred: {e}")
+
 #To Do:
-#Bosses
-#Scaled Progression
+#Fix bosses
+#Shop
