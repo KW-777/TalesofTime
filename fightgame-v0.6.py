@@ -2,7 +2,7 @@ from random import randint
 import os.path
 from ast import literal_eval
 class FightGame:
-    VERSION = 0.5
+    VERSION = 0.6
     current_character = None
     current_opponent = None
     globalself = None
