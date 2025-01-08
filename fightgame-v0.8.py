@@ -2,7 +2,7 @@ from random import randint
 import os.path
 from ast import literal_eval
 class FightGame:
-    VERSION = 0.6
+    VERSION = 0.8
     current_character = None
     current_opponent = None
     globalself = None
@@ -22,6 +22,7 @@ class FightGame:
         self.character = None
         self.char = chartype
         self.name = name
+        self.lvprices = [50,100,200,250,425,500,625,700,800,900,1000,1125,1250,1500,1750,2000]
         if chartype.lower() == "warrior":
             self.character = Warrior(name)
         elif chartype.lower() == "archer":
@@ -42,9 +43,44 @@ class FightGame:
         self.mainmenu()
 ##Battle Functions##
     def newOpponent(self): #New Opponent
-        if self.boss_class() == True:
-            self.opponent = self.get_boss()
-        else:
+        rand1 = randint(1,10)
+        bossrnd = False
+        if self.character.kc >= 5 and rand1 % 2 == 0 and not self.character.boss5:
+            if self.character.char == "Archer":
+                bossrnd = True
+                self.opponent = Boss_Archer()
+            elif self.character.char == "Warrior":
+                bossrnd = True
+                self.opponent = Boss_Warrior()
+            elif self.character.char == "Mage":
+                bossrnd = True
+                self.opponent = Boss_Mage()
+            elif self.character.char == "Raider":
+                bossrnd = True
+                self.opponent = Boss_Raider()
+            elif self.character.char == "Adventurer":
+                bossrnd = True
+                self.opponent = Boss_Adventurer()  
+            else:
+                rand = randint(1,5)
+                bossrnd == True
+                if rand == 1:
+                    self.opponent = Boss_Archer()
+                elif rand == 2:
+                    self.opponent = Boss_Warrior()
+                elif rand == 3:
+                    self.opponent = Boss_Mage()
+                elif rand == 4:
+                    self.opponent = Boss_Raider()
+                else:
+                    bossrnd = False
+        elif self.character.kc >= 10 and self.character.boss5 == True:            
+            if rand1 == 1:
+                bossrnd = True
+                self.event_shadow()
+            else:
+                bossrnd = False
+        if bossrnd == False:
             ranclass = randint(0,4)
             names = ["Terry the %s", "John the %s", "Declan the %s", "Steve the %s", "Joe the %s", "Brian the %s", "Alex the %s"]
             ranName = randint(1,len(names)-1)
@@ -63,10 +99,11 @@ class FightGame:
             else:
                 oppchar = "Adventurer"
                 self.opponent = Adventurer(name=names[ranName] % oppchar)
+            self.opponent.exp = randint(15,65)
             print("(!)New Opponent Incoming(!)")
             print("\nA wild %s has appeared!" % oppchar)
-        if Character == None:
-            return
+        if self.current_character == None:
+            exit()
         else:
             FightGame.current_opponent = self.opponent
             self.set_dif()
@@ -135,7 +172,7 @@ class FightGame:
             self.attack()
         self.round_debuffs()
 #continue    
-        if self.opponent.health and self.character.health > 0:
+        if self.opponent.health > 0 and self.character.health > 0:
             self.fightmenu()
     def run(self): #Run from fight
         if self.opponent.isBoss:
@@ -174,19 +211,22 @@ class FightGame:
             print("%s dropped 1x Go-Juice!" % name)
         if chance == 3:
             self.character.items[2] += 1
-            print("%s dropped 1x Adrenaline Booster" % name)            
+            print("%s dropped 1x Adrenaline Booster" % name)
+        if chance == 4:
+            self.character.items[3] += 1
+            print("%s dropped 1x Antidote" % name)          
     def fightWin(self): #Victory
         self.itemdrop(self.opponent.name)
         self.opponent = None
         randcoins = self.character.coinrate
-        self.character.damage += 5
-        self.character.speed += 5
         self.character.kc += 1
+        self.character.exp += self.current_opponent.exp
         self.character.health += 75
+        self.check_lv()
         if self.character.health > self.character.maxhealth:
             self.character.health = self.character.maxhealth
         self.character.coins += randcoins
-        print("\nYou have defeated your opponent! [+75 Health, +5 Max Damage, +5 Max Speed, +%d coins]" % randcoins)
+        print("\nYou have defeated your opponent! [+75 Health, +%d experience pts, +%d coins]" % (FightGame.current_opponent.exp,randcoins))
         y = input("\nWould you like to fight another opponent? (y/n): ")
         if y == "y":
             self.newOpponent()
@@ -217,25 +257,35 @@ class FightGame:
                     bio = "Boosts Speed, Accuracy & Crit chance"
                 if index == 2:
                     itemname = "(A) Adr Boosters"
-                    bio = "Boosts Damage, Crits & Defense Moderately "
+                    bio = "Boosts Damage, Crits & Defense Moderately"
+                if index == 3:
+                    itemname = "(AT) Antidote"
+                    bio = "Cures user of poison"
+                if index == 4:
+                    itemname = "(SS) Shadow Serum"
+                    bio = 'Boosts damage, defense and speed. Inficts the "Shadow Sickness"'
                 print("\n%dx %s\n=>%s" % (self.character.items[index],itemname,bio))
-            y = input("\nWould you like to use an item?(y/n)")
-            if y == "y":
-                x = input("What item would you like to use (M,G,A):").upper()
+            x = input("What item would you like to use (M,G,A,AT, X to quit.):").upper()
+            while x != "X":
                 if x == "M":
                     self.apply_hp()
                     self.inv()
-                if x == "G":
+                elif x == "G":
                     self.apply_gj()
                     self.inv()
-                if x == "A":
+                elif x == "A":
                     self.apply_adr()
                     self.inv()
-            else:
-                if self.prevmenu == "fm":
-                    self.fightmenu()
+                elif x == "AT":
+                    self.apply_anti()
+                    self.inv()
                 else:
-                    self.mainmenu()
+                    print("Invalid input")
+                    x = input("What item would you like to use (M,G,A,AT, X to quit.):").upper()
+            if self.prevmenu == "fm":
+                self.fightmenu()
+            else:
+                self.mainmenu()
         except Exception as e:
             print(f"An unexpected error occurred while getting menu: {e}")
     def apply_hp(self): #Apply Medpack
@@ -267,6 +317,15 @@ class FightGame:
             self.character.critrate = 3
             self.character.gj = True
             self.inv()     
+    def apply_anti(self):
+        try:
+            if self.character.items[3] == 0:
+                print("(!)\nYou don't have enough Antidotes!\n(!)")
+            else:
+                print("Administered antidote. Poison cured!")
+                self.character.isPoisoned = False
+        except Exception as e:
+            print("An unexpected error occured while administering antidote:",e)
     def apply_adr(self,duration=5): #Apply Adrenaline Shot
         if self.character.items[2] == 0:
             print("(!)\nYou don't have enough Adrenaline Shots!/n(!)")
@@ -289,41 +348,47 @@ class FightGame:
     def round_debuffs(self):
         if self.character.health > 0 and self.opponent.health > 0:
             #Regen  
-            self.character.health += self.character.regen
-            self.opponent.health += self.opponent.regen
-            if self.character.regen > 0:
-                print(f"{self.character.name} regenerated {self.character.regen}hp") 
-            if self.opponent.regen > 0:
-                print(f"{self.opponent.name} regenerated {self.opponent.regen}hp") 
+            try:
+                self.character.health += self.character.regen
+                self.opponent.health += self.opponent.regen
+                if self.character.regen > 0:
+                    print(f"{self.character.name} regenerated {self.character.regen}hp") 
+                if self.opponent.regen > 0:
+                    print(f"{self.opponent.name} regenerated {self.opponent.regen}hp")
+            except Exception as e:
+                print("An unexpected error occured while applying regeneration:",e)
             #Poison Chance
-            if self.character.poison > 0 and not self.opponent.isPoisoned:
-                rand = randint(1,5)
-                if rand == 1:
-                    print("You poisoned %s" % self.opponent.name)
-                    self.opponent.isPoisoned
-            if self.opponent.poison > 0 and not self.character.isPoisoned:
-                rand = randint(1,5)
-                if rand == 1:
-                    print("%s poisoned you" % self.opponent.name)
-                    self.character.isPoisoned = True
-            #Poison DMG
-            if self.character.isPoisoned:
-                if self.opponent.poison == 0:
-                    self.opponent.poison = randint(1,10)
-                self.character.health -= self.opponent.poison 
-                print("You are posioned. You lost %.1f health" % self.opponent.poison)
-                if self.character.health <= 0:
-                    self.fightLoss()
-            if self.opponent.isPoisoned:
-                if self.character.poison == 0:
-                    self.character.poison = randint(1,10)
-                self.opponent.health -= self.character.poison 
-                print("%s is posioned. They lost %.1f health" % (self.opponent.name,self.opponent.poison))
-                if self.opponent.health <= 0:
-                    if self.opponent.isBoss:
-                        self.opponent.fightWin()
-                    else:
-                        self.fightWin()
+            try:
+                if self.character.poison > 0 and not self.opponent.isPoisoned:
+                    rand = randint(1,5)
+                    if rand == 1:
+                        print("You poisoned %s" % self.opponent.name)
+                        self.opponent.isPoisoned
+                if self.opponent.poison > 0 and not self.character.isPoisoned:
+                    rand = randint(1,5)
+                    if rand == 1:
+                        print("%s poisoned you" % self.opponent.name)
+                        self.character.isPoisoned = True
+                #Poison DMG
+                if self.character.isPoisoned:
+                    if self.opponent.poison == 0:
+                        self.opponent.poison = randint(1,10)
+                    self.character.health -= self.opponent.poison 
+                    print("You are posioned. You lost %.1f health" % self.opponent.poison)
+                    if self.character.health <= 0:
+                        self.fightLoss()
+                if self.opponent.isPoisoned:
+                    if self.character.poison == 0:
+                        self.character.poison = randint(1,10)
+                    self.opponent.health -= self.character.poison 
+                    print("%s is posioned. They lost %.1f health" % (self.opponent.name,self.opponent.poison))
+                    if self.opponent.health <= 0:
+                        if self.opponent.isBoss:
+                            self.opponent.fightWin()
+                        else:
+                            self.fightWin()
+            except Exception as e:
+                print(f"An unexpected error occurred while dealing poison dmg: {e}")
             #Go-Juice
             if self.character.gjr > 1:
                 self.character.gjr -= 1
@@ -349,10 +414,11 @@ class FightGame:
             self.prevmenu = "mm"
             print("Tales of Time Main Menu")
             print('Enter "help" for available commands')
-            opt = input("What would you like to do?").lower()
+            opt = input('What would you like to do?: ').lower()
             if opt == "help" or opt == "h":
-                print("Usage - Keyword\nView Current Character - info\nCreate New Character - newchar" \
-                      "\nChange Difficulty - dif\nNew Encounter - fight \nInventory - inv\nShop - n/a")
+                print("Usage - Keyword\nView Current Character - stats\nCreate New Character - newchar" \
+                      "\nChange Difficulty - dif\nNew Encounter - fight \nInventory - inv\nShop - n/a" \
+                      "\nLeveling upgrades - upgrade")
                 self.mainmenu()
             elif opt == "stats" or opt == "s":
                 self.info()
@@ -383,8 +449,10 @@ class FightGame:
                 self.summon_boss()
                 FightGame.current_opponent = self.opponent
                 self.fightmenu()
+            elif opt == "upgrade":
+                self.lvshop()
             elif opt == "exit":
-                exit
+                exit()
             else:
                 print("Invalid Option")
                 print("Usage - Keyword\nView Current Character - info\nCreate New Character - newchar" \
@@ -427,9 +495,88 @@ class FightGame:
             self.fightmenu()
     def info(self): #Displays user stats
         print("The tale of %s:" % self.character.name, 
-              "\n\nStats: \nHealth: %.1f/%d\nDefense: %.1f\nSpeed: %.1f\nDamage: %.1f\nCoins: %d\nWins: %d\nRegen (per rd): %d" % (
+              "\n\nStats: \nHealth: %.1f/%d\nDefense: %.1f\nSpeed: %.1f\nDamage: %.1f\nCoins: %d\nWins: %d\nRegen (per rd): %d\nLv: %d (%dxp)" % (
                   self.character.health,self.character.maxhealth, self.character.defense, self.character.speed,
-                  self.character.damage, self.character.coins,self.character.kc,self.character.regen))
+                  self.character.damage, self.character.coins,self.character.kc,self.character.regen,self.character.lv,self.character.exp))
+    def lvshop(self):
+        print("Welcome to the upgrade menu. Spend leveling points (LP) earned from leveling up")
+        print("There are currently 3 paths to complete. Each unlocking special bonuses as you progress.")
+        print("\nYour current levels are as followed:\n")
+        print("Attack: %d Defense: %d Speed: %d\n" % (self.character.alv,self.character.dlv,self.character.slv ))
+        print(f"You have {self.character.lvpts}pts")
+        path = ""
+        while path not in ["a","d","s"]:
+            path = input("What path would you like to access? (A,D,S): ").lower()
+            if path == "a":
+                fpath = "attack"
+            elif path == "d":
+                fpath = "defense"
+            elif path == "s":
+                fpath = "speed"
+            else: 
+                print("Invalid Path.")
+        opt = input(f'{fpath} path selected. What would you like to do\ntype "help" for commands: ')
+        while opt != "exit" and opt != "e":
+            if opt == "help":
+                print("Command List:\nupgrade,u - Spend LP on upgrading this path\n" \
+                      "view,v - shows all current path levels & rewards\npoints,p - Shows how many leveling points you have (LP)\n"
+                      "change,c - change current path (all upgrades will remain)\n"
+                      "exit,e - Go back to the main menu\n")
+                opt = input(f"{fpath} path selected. What would you like to do?")
+            elif opt == "upgrade" or opt == "u":
+                lvname = path + "lv"
+                if getattr(self.character,lvname) < 4:
+                    price = 1
+                    mod = 5
+                elif getattr(self.character,lvname) == 5:
+                    if path == "A":
+                        pass
+                    elif path == "D":
+                        pass
+                    elif path == "S":
+                        pass
+                elif getattr(self.character,lvname) < 7:
+                    price = 2
+                    mod = 10
+                elif getattr(self.character,lvname) < 10:
+                    price = 3
+                    mod = 5
+                b = input("Would you like to upgrade %s for %.2f LP? (y/n): " % (fpath,price))
+                if b == "y":
+                    if self.character.lvpts >= price:
+                        if path == "a":
+                            self.character.damage += mod
+                            setattr(self.character,lvname,getattr(self.character,lvname)+1)
+                        else:
+                            setattr(self.character, fpath, (getattr(self.character, fpath) + mod))
+                            setattr(self.character,lvname,getattr(self.character,lvname)+1)
+                        print(f"Upgrade successful! [+{mod} {fpath}]")
+                        self.character.lvpts -= price
+                        print(f"You have {self.character.lvpts} pts remaining")
+                        opt = "help"
+                    else:
+                        print("You do not have enough LP for this upgrade.")
+                        opt = "help"
+                else:
+                    opt == "help"
+            elif opt == "change":
+                while path != "a" and path != "d" and path != "s":
+                    path = input("What path would you like to access? (A,D,S): ").lower()
+                    if path == "a":
+                        fpath = "attack"
+                    elif path == "d":
+                        fpath = "defense"
+                    elif path == "s":
+                        fpath = "speed"
+                    else: 
+                        print("Invalid Path.")
+            else:
+                print("Invalid option")
+            opt = input(f'{fpath} path selected. What would you like to do\ntype "help" for commands: ')
+
+        self.mainmenu()
+                        
+
 ##Settings##
     def modify_difficulty(self,lv="x"): #Modifies opponent stats
         if lv == "x":
@@ -459,45 +606,78 @@ class FightGame:
         self.character.mult = mult
     def set_dif(self): #Sets opponent stats according to difficulty
         try:
-            self.opponent.health *= self.character.mult
-            self.opponent.defense *= self.character.mult
-            self.opponent.speed *= self.character.mult
-            self.opponent.damage *= self.character.mult
+            if self.character != None and self.opponent != None:
+                self.opponent.health *= self.character.mult
+                self.opponent.defense *= self.character.mult
+                self.opponent.speed *= self.character.mult
+                self.opponent.damage *= self.character.mult
         except Exception as e:
             print(f"An unexpected error occurred while setting difficulty: {e}")
+    def check_lv(self):
+        for i in range(0,len(self.lvprices)-1):
+            if self.character.exp >= self.lvprices[i]:
+                if self.character.lv == i:
+                    self.character.lv += 1
+                    self.character.lvpts += 1
+                    print("You leveled up! You are now level %d (%d pts)" % (self.character.lv,self.character.lvpts))
+                
 ##Bosses##
     def get_boss(self):
-        if self.character.char == "Archer":
-            if self.character.kc == 5:
-                return Boss_Archer()
-        elif self.character.char == "Warrior":
-            if self.character.kc == 5:
-                return Boss_Warrior()
-        elif self.character.char == "Mage":
-            if self.character.kc == 5:
-                return Boss_Mage()
-        elif self.character.char == "Raider":
-            if self.character.kc == 5:
-                return Boss_Raider()
-        elif self.character.char == "Adventurer":
-            if self.character.kc == 5:
-                return Boss_Adventurer()
+        randchance = randint(1,10)
+        if randchance % 2 == 0:
+            if self.character.boss5 == False:
+                if self.character.char == "Archer":
+                    if self.character.kc >= 5:
+                        return Boss_Archer()
+                elif self.character.char == "Warrior":
+                    if self.character.kc >= 5:
+                        return Boss_Warrior()
+                elif self.character.char == "Mage":
+                    if self.character.kc >= 5:
+                        return Boss_Mage()
+                elif self.character.char == "Raider":
+                    if self.character.kc >= 5:
+                        return Boss_Raider()
+                elif self.character.char == "Adventurer":
+                    if self.character.kc >= 5:
+                        return Boss_Adventurer()
+            if self.character.kc >= 10:            
+                if randchance == 1:
+                    self.event_shadow()
+                    return
+            else:
+                rand = randint(1,3)
+                print(rand)
+                if rand == 1:
+                    return Boss_Archer()
+                if rand == 2:
+                    return Boss_Warrior()
+                if rand == 3:
+                    return Boss_Mage()
+                if rand == 4:
+                    return Boss_Raider()
         else:
-            rand = randint(1,3)
-            print(rand)
-            if rand == 1:
-                return Boss_Archer()
-            if rand == 2:
-                return Boss_Warrior()
-            if rand == 3:
-                return Boss_Mage()
-            if rand == 4:
-                return Boss_Raider
-    def boss_class(self):
-        if self.character.kc == 5:
-            return True
-        else:
-            return False
+            ranclass = randint(0,4)
+            names = ["Terry the %s", "John the %s", "Declan the %s", "Steve the %s", "Joe the %s", "Brian the %s", "Alex the %s"]
+            ranName = randint(1,len(names)-1)
+            if ranclass == 0:
+                oppchar = "Warrior"
+                self.opponent = Warrior(name=names[ranName] % oppchar)
+            elif ranclass == 1:
+                oppchar = "Archer"
+                self.opponent = Archer(name=names[ranName] % oppchar)
+            elif ranclass == 2:
+                oppchar = "Mage"
+                self.opponent = Mage(name=names[ranName] % oppchar)
+            elif ranclass == 3:
+                oppchar = "Raider"
+                self.opponent = Raider(name=names[ranName] % oppchar)
+            else:
+                oppchar = "Adventurer"
+                self.opponent = Adventurer(name=names[ranName] % oppchar)
+            self.opponent.exp = randint(5,50)
+            print("(!)New Opponent Incoming(!)")
+            print("\nA wild %s has appeared!" % oppchar)
     def summon_boss(self,n=0):
         try:
             if n == 0:
@@ -532,7 +712,7 @@ class FightGame:
             print("You resist the urge to investigate and walk another way.")
             self.newOpponent()
 
-##Save/Load##
+##Save/Load
     def getSaves(self):
         try:
             self.character.savenum = str(input("What save file would you like to overwrite?: "))
@@ -598,7 +778,7 @@ class FightGame:
             print(f"An unexpected error occurred while getting opponent stats: {e}")
 ######################Classes#############################
 class Character: #Name,Type,HP,Def,Spd,Dmg
-    def __init__(self, name="Nomad", chartype="Adventurer", health=100, defense=40, speed=40, damage=40, ranatk=10):
+    def __init__(self, name="Nomad", chartype="Adventurer", health=100, defense=45, speed=45, damage=45, ranatk=20):
 #Type Attributes
         self.name = name
         self.char = chartype
@@ -625,7 +805,14 @@ class Character: #Name,Type,HP,Def,Spd,Dmg
 #Drop Attributes
         self.coins = 0
         self.coinrate = randint(5,25)
-        self.items = [0]*3# Medpacks, Go-Juice, Adrenaline Boosters
+        self.items = [1,0,0,0]#Medpacks, Go-Juice, Adrenaline Booster, Antidote
+#Leveling Attributes
+        self.exp = 0
+        self.lv = 0
+        self.lvpts = 0
+        self.alv = 0
+        self.dlv = 0
+        self.slv = 0
 #Function Attributes
         self.mult = 1
         self.gjr = 0
@@ -633,24 +820,25 @@ class Character: #Name,Type,HP,Def,Spd,Dmg
         self.adr = False
         self.gj = False
         self.isBoss = False
+        self.boss5 = False
         self.savenum = 0
         self.attr = ["name","char","health","defense","speed","damage" \
             ,"kc","ranatk","critpercent","maxhealth","critrate" \
-            ,"regen","coins","coinrate","items","mult","asr","gjr","adr","gj","savenum"]
+            ,"regen","poison","coins","coinrate","items","mult","asr","gjr","adr","gj","savenum","lv","exp","lvpts","alv","dlv","slv"] #All saved attributes
 class Warrior(Character): #Warrior Class => High Health, Low Defense, Moderately Slow, Medium Damage
     def __init__(self, name="Warrior"):
         super().__init__(name, "Warrior", 120, 30, 50, 50,99)
         self.atkmsg = ["\n%s sliced %s dealing %.1f dmg", "\n%s stabbed %s dealing %.1f dmg"]
         self.critpercent = 1.40
-class Archer(Character): #Archer Class => Medium Health, Medium Defense, Moderately Fast, Very Low defense 
+class Archer(Character): #Archer Class => Medium Health, Medium Defense, Moderately Fast, 1Low damage 
     def __init__(self, name="Archer"):
-        super().__init__(name, "Archer", 120, 50, 70, 30,5) #Archer Class => Medium Health, Medium Defense, High speed, Low damage
+        super().__init__(name, "Archer", 100, 50, 70, 35,5) #Archer Class => Medium Health, Medium Defense, High speed, Low damage
         self.atkmsg = ["%s shot an arrow at %s dealing %.1f dmg", "%s pierced %s with an arrow dealing %.1f dmg"]
         self.critpercent = 1.50
         self.maxhealth = 240   
 class Mage(Character): #Mage Class => Low Health, High Defense, Very Fast, Medium Damage
     def __init__(self, name="Mage"):
-        super().__init__(name, "Mage", 60, 60, 80, 50,7)
+        super().__init__(name, "Mage", 60, 55, 80, 50,7)
         self.atkmsg = ["%s blasted %s with a fireball dealing %.1f dmg", "%s cast a spell on %s dealing %.1f dmg"]
         self.critpercent = 1.40
         self.maxhealth = 120
@@ -676,17 +864,18 @@ class Boss_Archer(Character):
         self.atkmsg = ["%s blasted %s with a piercing shot dealing %.1f dmg"]
         self.maxhealth = 300
         self.critpercent = 1.80
-        self.regen = 15
+        self.regen = 10
+        self.exp = 500
         self.isBoss = True
     def fightWin(self):
         FightGame.current_character.maxhealth += 75
         FightGame.current_character.health = FightGame.current_character.maxhealth
-        FightGame.current_character.speed += 20
-        FightGame.current_character.damage += 20
+        FightGame.current_character.exp += self.exp
         FightGame.current_character.coins += 75
         FightGame.current_character.kc += 1
+        FightGame.current_character.boss5 = True
         print("\nYou have defeated the %s!" % self.name)
-        print("[+75 Max Health, +20 Max Speed, +20 Max Damage, +75 Coins]")
+        print("[+75 Max Health, +500 experience points, +75 Coins]")
         for i in range(1,randint(1,5)):
             FightGame.globalself.itemdrop(self.name)
         print("\nYou notice the %s's quiver shimmering..." % self.name)
@@ -706,22 +895,23 @@ class Boss_Archer(Character):
             FightGame.globalself.mainmenu()
 class Boss_Warrior(Character):
     def __init__(self,name="Knight"):
-        super().__init__(name, "Boss_Warrior",200,70,90,65,99)
+        super().__init__(name, "Boss_Warrior",200,50,90,65,99)
         print("\n(!) Incoming Boss (!)")
         self.atkmsg = ["%s sliced %s with a deadly blade dealing %.1f dmg"]
         self.maxhealth = 300
         self.critpercent = 1.80
-        self.regen = 15
+        self.regen = 10
+        self.exp = 500
         self.isBoss = True
     def fightWin(self):
-        FightGame.current_character.maxhealth += 50
+        FightGame.current_character.maxhealth += 90
         FightGame.current_character.health = FightGame.current_character.maxhealth
-        FightGame.current_character.speed += 15
-        FightGame.current_character.damage += 15
         FightGame.current_character.coins += 75
+        FightGame.current_character.exp += self.exp
         FightGame.current_character.kc += 1
+        FightGame.current_character.boss5 = True
         print("\nYou have defeated the %s!" % self.name)
-        print("[+90 Max Health, +15 Max Speed, +15 Max Damage, +75 Coins]")
+        print("[+90 Max Health, +500 experience pts, +75 Coins]")
         for i in range(1,randint(1,7)):
             FightGame.globalself.itemdrop(self.name)
         print("\nYou %s's blade shimmering in the moonlight.." % self.name)
@@ -749,17 +939,18 @@ class Boss_Mage(Character):
         self.atkmsg = ["%s blasted %s with a magical shot dealing %.1f dmg"]
         self.maxhealth = 300
         self.critpercent = 1.80
-        self.regen = 15
+        self.regen = 10
+        self.exp = 500
         self.isBoss = True
     def fightWin(self):
         FightGame.current_character.maxhealth += 80
+        FightGame.current_character.exp += self.exp
         FightGame.current_character.health = FightGame.current_character.maxhealth
-        FightGame.current_character.speed += 20
-        FightGame.current_character.damage += 10
         FightGame.current_character.coins += 75
         FightGame.current_character.kc += 1
+        FightGame.current_character.boss5 = True
         print("\nYou have defeated the %s!" % self.name)
-        print("[+80 Max Health, +20 Max Speed, +10 Max Damage, +75 Coins]")
+        print("[+80 Max Health, +500 experience pts, +75 Coins]")
         for i in range(1,randint(1,5)):
             FightGame.globalself.itemdrop(self.name)
         print("\nYou notice a shiny gem around the %s's neck..." % self.name)
@@ -785,17 +976,18 @@ class Boss_Raider(Character):
         self.atkmsg = ["%s slashed %s with a razersharp dagger dealing %.1f dmg"]
         self.maxhealth = 400
         self.critpercent = 2.80
-        self.regen = 20
+        self.regen = 15
+        self.exp = 500
         self.isBoss = True
     def fightWin(self):
         FightGame.current_character.maxhealth += 80
         FightGame.current_character.health = FightGame.current_character.maxhealth
-        FightGame.current_character.speed += 20
-        FightGame.current_character.damage += 10
+        FightGame.current_character.exp += self.exp
         FightGame.current_character.coins += 75
         FightGame.current_character.kc += 1
+        FightGame.current_character.boss5 = True
         print("\nYou have defeated the %s!" % self.name)
-        print("[+80 Max Health, +20 Max Speed, +10 Max Damage, +75 Coins]")
+        print("[+80 Max Health, +%d experience pts, +75 Coins]" % self.exp)
         for i in range(1,randint(1,8)):
             FightGame.globalself.itemdrop(self.name)
         print("\nYou notice %s's dagger shimmering..." % self.name)
@@ -822,18 +1014,19 @@ class Boss_Adventurer(Character):
         self.atkmsg = ["%s stabbed %s with a poisonous blade dealing %.1f dmg"]
         self.maxhealth = 400
         self.critpercent = 2.80
-        self.regen = 20
-        self.poison = 20
+        self.regen = 10
+        self.poison = 15
+        self.exp = 750
         self.isBoss = True
     def fightWin(self):
         FightGame.current_character.maxhealth += 120
         FightGame.current_character.health = FightGame.current_character.maxhealth
-        FightGame.current_character.speed += 20
-        FightGame.current_character.damage += 10
+        FightGame.current_character.exp += self.exp
         FightGame.current_character.coins += 75
         FightGame.current_character.kc += 1
+        FightGame.current_character.boss5 = True
         print("\nYou have defeated the %s!" % self.name)
-        print("[+120 Max Health, +20 Max Speed, +10 Max Damage, +75 Coins]")
+        print("[+120 Max Health, +%d experience pts, +75 Coins]")
         for i in range(1,randint(1,8)):
             FightGame.globalself.itemdrop(self.name)
         print("\nYou notice %s's blade glistening..." % self.name)
@@ -860,14 +1053,15 @@ class Boss_Shadow(Character):
         self.regen = 15
         self.maxhealth = 750
         self.poison = 15
+        self.exp = 1000
         self.isBoss = True
     def fightWin(self):
         FightGame.current_character.maxhealth += 150
         FightGame.current_character.health = FightGame.current_character.maxhealth
-        FightGame.current_character.speed += 20
-        FightGame.current_character.damage += 20
+        FightGame.current_character.exp += self.exp
         FightGame.current_character.coins += 150
-        FightGame.current_character.kc += 1   
+        FightGame.current_character.kc += 1
+        print()
 class Dev(Character):
     def __init__(self,name="Dev"):
         super().__init__(name, "Dev", 999,99,999,999,99)
@@ -876,7 +1070,7 @@ class Dev(Character):
 try:            
     game = FightGame()
 except Exception as e:
-    print(f"An unexpected error occurred: {e}")
+    print(f"An unexpected error occurred during initalization: {e}")
 
 #To Do:
 #Shop
